@@ -1,0 +1,52 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: "Pets APIs to interact with pets providers"
+  description: "Swagger API definition for the pets apis"
+  license:
+    name: MIT
+host: pets.dev-tap.apps.eu.aks.mytanzu.xyz
+tags:
+- name: "Data collection"
+  description: "Data collection (read-only) APIs"
+schemes:
+- "http"
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      tags:
+      - "Data collection"      
+      produces:
+      - "application/json"
+      responses:        
+        200:
+          description: "Successful data collection"
+        501:
+          description: "Invalid pet identifier"
+        503:
+          description: "Invalid kind identifier"
+  /pets/{kind}/v1/data/{id}:
+    get:
+      summary: Retrieve details about the {kind} pet based on its {id}
+      tags:
+      - "Data collection"      
+      produces:
+      - "application/json"
+      parameters:
+      - name: "kind"
+        in: "path"
+        description: "kind of pets (cats,dogs,fishes)"
+        required: true
+        type: "string"          
+      - name: "id"
+        in: "path"
+        description: "ID of pet to get detail"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful data collection"
+        400:
+          description: "Invalid pet identifier"

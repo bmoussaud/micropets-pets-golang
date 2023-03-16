@@ -1,0 +1,19 @@
+apiVersion: carto.run/v1alpha1
+kind: Deliverable
+metadata:
+  name: pets
+  labels:
+    app.tanzu.vmware.com/workload-type: micropets-delivery
+spec:
+  params:
+  - name: environment
+    value: aws/aws-front
+  - name: application
+    value: micropets/current
+  serviceAccountName: cartographer-deliverable-sa
+  source:
+    git:
+      ref:
+        branch: main
+      url: http://github.com/bmoussaud/micropets-app-gitops.git
+  

@@ -1,0 +1,37 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: pets  
+  description: Micropets Pets Service
+  tags:
+    - web
+    - tanzu
+    - golang  
+  annotations:
+    'backstage.io/kubernetes-label-selector': 'app.kubernetes.io/name=pets'
+    'github.com/project-slug': 'bmoussaud/micropets-app/pets'
+  links:
+    - url: https://en.wikipedia.org/wiki/Pet
+      title: 'Pets (wikipedia) '
+      icon: locallibrary
+spec:
+  type: service
+  lifecycle: experimental
+  owner: the-pet-team
+  system: micropets
+  dependsOn: [Component:cats,Component:dogs,Component:fishes]
+  providesApis:
+    - pets-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: pets-api
+  description: Manage Pets Service
+spec:
+  type: openapi
+  lifecycle: production  
+  owner: the-pet-team
+  system: micropets
+  definition: 
+    $text: https://github.com/bmoussaud/micropets-app/blob/master/pets/pets-api-swagger.yaml

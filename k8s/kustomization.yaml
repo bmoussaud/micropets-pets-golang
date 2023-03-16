@@ -1,0 +1,14 @@
+# kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- resources-dev.yaml
+- istio.yaml
+namespace: micropetdev
+images:
+  - name: localregistry:5000/micropet/pets
+    newName: bmoussaud/micropet_pets
+configMapGenerator:
+- name: pets-config  
+  files:
+  - pets_config.json
