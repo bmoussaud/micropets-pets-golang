@@ -1,0 +1,9 @@
+target
+.git
+.github
+.idea
+.vscode
+delivery
+kapp
+k8s
+kustomize

@@ -1,0 +1,12 @@
+target
+.git
+.github
+.idea
+.vscode
+config
+node_modules
+delivery
+kapp
+k8s
+kustomize
+
