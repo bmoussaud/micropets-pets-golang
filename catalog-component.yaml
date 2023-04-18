@@ -27,6 +27,10 @@ kind: API
 metadata:
   name: pets-api
   description: Manage Pets Service
+  links:
+    - url: https://github.com/bmoussaud/micropets-pets-golang/
+      title: GitHub
+      icon: dashboard
 spec:
   type: openapi
   lifecycle: production  
