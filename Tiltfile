@@ -1,4 +1,4 @@
-SOURCE_IMAGE = os.getenv("SOURCE_X_IMAGE", default='akseutap4registry.azurecr.io/pets-source')
+SOURCE_IMAGE = os.getenv("SOURCE_X_IMAGE", default='akseutap5registry.azurecr.io/pets-source')
 LOCAL_PATH = os.getenv("LOCAL_PATH", default='.')
 NAMESPACE = os.getenv("NAMESPACE", default='dev-tap')
 OUTPUT_TO_NULL_COMMAND = os.getenv("OUTPUT_TO_NULL_COMMAND", default=' > /dev/null ')
@@ -11,7 +11,9 @@ local_resource(
   deps=['./cmd', './service','./internal'],
   dir='.')
 
-allow_k8s_contexts('aks-eu-tap-4')
+allow_k8s_contexts('aks-eu-tap-5')
+
+k8s_yaml(["config/serviceclaims-aria.yaml"])
 
 k8s_custom_deploy(
     'pets',

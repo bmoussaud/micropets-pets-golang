@@ -10,5 +10,4 @@ func main() {
 	LoadConfiguration()
 	NewGlobalTracer()
 	pets.Start()
-
 }

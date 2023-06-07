@@ -81,12 +81,6 @@ func queryPets(backend string) (Pets, error) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Expires", "10ms")
 
-	//Inject the opentracing header
-	if LoadConfiguration().Observability.Enable {
-		//_, span := otel.Tracer("pets").Start(ctx, backend)
-		//defer span.End()
-	}
-
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Printf("##########################@ ERROR Connecting backend [%s]\n", backend)
@@ -115,12 +109,6 @@ func queryPet(backend string) (Pet, error) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Expires", "10ms")
 
-	//Inject the opentracing header
-	if LoadConfiguration().Observability.Enable {
-		//_, span := otel.Tracer("pets").Start(ctx, backend)
-		//defer span.End()
-	}
-
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Printf("#queryPet@ ERROR Connecting backend [%s]\n", backend)
@@ -140,7 +128,8 @@ func queryPet(backend string) (Pet, error) {
 }
 
 func readiness_and_liveness(w http.ResponseWriter, r *http.Request) {
-	NewServerSpan(r, "readiness_and_liveness")
+	span := NewServerSpan(r, "readiness_and_liveness")
+	defer span.Finish()
 
 	setupResponse(&w, r)
 	//fmt.Printf("Handling %+v\n", r)
@@ -157,8 +146,8 @@ func readiness_and_liveness(w http.ResponseWriter, r *http.Request) {
 }
 
 func pets(w http.ResponseWriter, r *http.Request) {
-	//_, span := otel.Tracer("pets").Start(ctx, "pets")
-	//defer span.End()
+	span := NewServerSpan(r, "pets")
+	defer span.Finish()
 
 	setupResponse(&w, r)
 	fmt.Printf("index Handling %+v\n", r)
@@ -233,8 +222,8 @@ func pets(w http.ResponseWriter, r *http.Request) {
 }
 
 func detail(w http.ResponseWriter, r *http.Request) {
-	//_, span := otel.Tracer("pets").Start(ctx, "detail")
-	//defer span.End()
+	span := NewServerSpan(r, "detail")
+	defer span.Finish()
 
 	setupResponse(&w, r)
 	fmt.Printf("index Handling %+v\n", r)

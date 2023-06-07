@@ -14,11 +14,14 @@ stringData:
         "port": ":8080",
         "listen": "true"        
       },
+      "backends": {},
       "observability": {
-        "application": "micropets-pets",
+        "enable": false,
+        "application": "micropets",
+        "service": "pets",
         "cluster": "us-west",
         "shard": "primary",
-        "server": "my.wavefront.com",
-        "token": "x-y-z-y"
+        "server": "https://binz.wavefront.xxx",
+        "token": "xxxx-xxx-yyyy-zzzz"
       }
     }

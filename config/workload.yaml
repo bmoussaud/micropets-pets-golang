@@ -27,3 +27,5 @@ spec:
         apps.tanzu.vmware.com/pipeline: test-golang
     - name: gitops_commit_message
       value: pets dev supplychain@cluster.local
+    - name: userId
+      value: 1001

@@ -10,7 +10,7 @@
     "service": "pets",
     "cluster": "us-west",
     "shard": "primary",
-    "server": "https://vmware.wavefront.com",
+    "server": "https://binz.wavefront.co",
     "token": "xxxx-xxx-yyyy-zzzz"
   }
 }

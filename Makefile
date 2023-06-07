@@ -32,8 +32,11 @@ DOCKER_HUB_IMAGE_DEV=bmoussaud/micropet_$(BINARY_NAME):dev
 fmt:
 	find . -type f -name "*.go" | grep -v "./vendor*" | xargs gofmt -s -w
 
-build: deps
-	GO111MODULE=auto $(GOBUILD) -o $(BINARY_NAME) -v service/pets 
+.PHONY:build
+build: 	
+# go build -o /layers/paketo-buildpacks_go-build/targets/bin -buildmode pie -trimpath ./cmd/pets
+#	$(GOBUILD) -o $(BINARY_NAME) -v service/pets 
+	CGO_ENABLED=0 $(GOBUILD) -o build/pets -buildmode pie -trimpath ./cmd/pets
 
 test:
 	$(GOTEST) -v ./...
@@ -71,8 +74,8 @@ docker-hub-push: docker-build
 	docker push $(DOCKER_HUB_IMAGE)
 	docker push $(DOCKER_HUB_IMAGE_DEV)
 
-docker-run:
-	docker run --rm  --name $(BINARY_NAME)  -v $(ROOT_DIR):/config -e SERVICE_CONFIG_DIR=/config -e MP_OBSERVABILITY.TOKEN=$(TO_TOKEN) -p 9000:9000 $(LOCAL_DOCKER_IMAGE)
+docker-run: cnb-image
+	docker run --rm  --name $(BINARY_NAME) -e MP_OBSERVABILITY.ENABLE=false -e MP_OBSERVABILITY.TOKEN=$(TO_TOKEN)  -v $(ROOT_DIR):/home/cnb/.micropets  -p 9000:9000 $(LOCAL_DOCKER_IMAGE)
 
 cnb-image:
 	pack build $(LOCAL_DOCKER_IMAGE) --buildpack gcr.io/paketo-buildpacks/go --builder paketobuildpacks/builder:base

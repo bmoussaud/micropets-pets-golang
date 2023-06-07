@@ -10,3 +10,6 @@ kapp
 k8s
 kustomize
 build
+build/pets
+vendor/
+target/

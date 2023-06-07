@@ -74,7 +74,7 @@ func LoadConfiguration() Config {
 			GlobalConfig.Service.Port = ":8080"
 			GlobalConfig.Service.Listen = true
 		} else {
-			fmt.Printf("Config file found \n")
+			fmt.Printf("Config file found !\n")
 			err = viper.Unmarshal(&GlobalConfig)
 			if err != nil {
 				panic(fmt.Errorf("unable to decode into struct, %v", err))
@@ -83,25 +83,31 @@ func LoadConfiguration() Config {
 				fmt.Printf("Found Env PORT variable %s\n", port)
 				GlobalConfig.Service.Port = fmt.Sprintf(":%s", port)
 			}
+			fmt.Printf("-1-->\n")
+			DumpBackendConfig(GlobalConfig)
+			fmt.Printf("-1-->\n")
 		}
 
 		if len(LocalConfig.Backends) == 0 {
 			fmt.Printf("* No defined backends, use dynamic mode!\n")
 			var dynamicConfig = QueryBackendService()
-			LocalConfig.Backends = dynamicConfig.Backends
-			LocalConfig.Service.Port = ":8080"
-			LocalConfig.Service.Listen = true
+			GlobalConfig.Backends = dynamicConfig.Backends
+			GlobalConfig.Service.Port = ":8080"
+			GlobalConfig.Service.Listen = true
 			if port := os.Getenv("PORT"); port != "" {
 				fmt.Printf("Found Env PORT variable %s\n", port)
 				GlobalConfig.Service.Port = fmt.Sprintf(":%s", port)
 			}
-			DumpBackendConfig(LocalConfig)
+			fmt.Printf("-2-->\n")
+			DumpBackendConfig(GlobalConfig)
+			fmt.Printf("-2-->\n")
 		}
 
 		fmt.Printf("Resolved Configuration\n")
-		GlobalConfig = LocalConfig
+		//GlobalConfig = LocalConfig
 		//re-read the configuration again & again
 		GlobalConfig.setup = false
+		DumpBackendConfig(GlobalConfig)
 		fmt.Printf("%+v\n", GlobalConfig)
 
 	}
@@ -109,6 +115,7 @@ func LoadConfiguration() Config {
 }
 
 func DumpBackendConfig(config Config) {
+	fmt.Printf("%+v\n", config)
 	fmt.Printf("******* Backends are:\n")
 	for i, backend := range config.Backends {
 		fmt.Printf("* Managing %d\t %s\t %s:%s%s\n", i, backend.Name, backend.Host, backend.Port, backend.Context)
