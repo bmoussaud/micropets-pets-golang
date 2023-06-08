@@ -83,9 +83,9 @@ func LoadConfiguration() Config {
 				fmt.Printf("Found Env PORT variable %s\n", port)
 				GlobalConfig.Service.Port = fmt.Sprintf(":%s", port)
 			}
-			fmt.Printf("-1-->\n")
-			DumpBackendConfig(GlobalConfig)
-			fmt.Printf("-1-->\n")
+			//fmt.Printf("-1-->\n")
+			//DumpBackendConfig(GlobalConfig)
+			//fmt.Printf("-1-->\n")
 		}
 
 		if len(LocalConfig.Backends) == 0 {
@@ -98,12 +98,12 @@ func LoadConfiguration() Config {
 				fmt.Printf("Found Env PORT variable %s\n", port)
 				GlobalConfig.Service.Port = fmt.Sprintf(":%s", port)
 			}
-			fmt.Printf("-2-->\n")
-			DumpBackendConfig(GlobalConfig)
-			fmt.Printf("-2-->\n")
+			//fmt.Printf("-2-->\n")
+			//DumpBackendConfig(GlobalConfig)
+			//fmt.Printf("-2-->\n")
 		}
 
-		fmt.Printf("Resolved Configuration\n")
+		fmt.Printf("=> Resolved Configuration\n")
 		//GlobalConfig = LocalConfig
 		//re-read the configuration again & again
 		GlobalConfig.setup = false

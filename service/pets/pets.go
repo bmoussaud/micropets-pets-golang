@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/imroc/req"
+	"github.com/opentracing/opentracing-go"
 
 	. "moussaud.org/pets/internal"
 )
@@ -69,17 +70,22 @@ func lookupService(service string) string {
 	return service
 }
 
-func queryPets(backend string) (Pets, error) {
+func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
 
 	var pets Pets
 	req.Debug = true
-	fmt.Printf("##########################@ 2 Connecting backend [%s]\n", backend)
+	fmt.Printf("* Connecting backend [%s]\n", backend)
 	req, err := http.NewRequest("GET", backend, nil)
 	if err != nil {
 		return pets, err
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Expires", "10ms")
+
+	//Inject the opentracing header
+	if LoadConfiguration().Observability.Enable {
+		opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+	}
 
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -169,18 +175,18 @@ func pets(w http.ResponseWriter, r *http.Request) {
 			URL = fmt.Sprintf("http://%s:%s%s", backend.Host, backend.Port, backend.Context)
 		}
 
-		fmt.Printf("* Accessing %d\t %s\t %s .....\n", i, backend.Name, URL)
+		fmt.Printf("* Accessing %d %s %s .....\n", i, backend.Name, URL)
 
-		lookupService(backend.Host)
+		//lookupService(backend.Host)
 
-		pets, err := queryPets(URL)
+		pets, err := queryPets(span.Context(), URL)
 		if err != nil {
 			fmt.Printf("* ERROR * Accessing backend [%s][%s]:[%s]\n", backend.Name, URL, err)
 		} else {
 			fmt.Printf("* process result\n")
 			all.Total = all.Total + pets.Total
 			all.Hostnames = append(all.Hostnames, Path{backend.Name, pets.Hostname})
-			fmt.Printf("* Hostnames %s\n", all.Hostname)
+			fmt.Printf("* Hostnames %+v\n", all.Hostnames)
 			for _, pet := range pets.Pets {
 				pet.Type = backend.Name
 				pet.URI = fmt.Sprintf("/pets%s", pet.URI)

@@ -22,6 +22,6 @@ stringData:
         "cluster": "us-west",
         "shard": "primary",
         "server": "https://binz.wavefront.xxx",
-        "token": "xxxx-xxx-yyyy-zzzz"
+        "token": "xxxx-xxx-yyyy-zzzz"        
       }
     }
