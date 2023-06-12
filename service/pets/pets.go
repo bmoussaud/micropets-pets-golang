@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
+
 	"net/http"
 	"os"
 	"regexp"
@@ -54,22 +54,6 @@ func setupResponse(w *http.ResponseWriter, req *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func lookupService(service string) string {
-
-	fmt.Fprintf(os.Stderr, "-- Service %v\n", service)
-	ips, err := net.LookupIP(service)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not get IPs: %v\n", err)
-		return service
-	}
-
-	for _, ip := range ips {
-		fmt.Printf("%s. IN A %s\n", service, ip.String())
-	}
-
-	return service
-}
-
 func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
 
 	var pets Pets
@@ -84,6 +68,7 @@ func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
 
 	//Inject the opentracing header
 	if LoadConfiguration().Observability.Enable {
+		fmt.Printf("* Inject the opentracing header \n")
 		opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	}
 
@@ -103,7 +88,7 @@ func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
 	return pets, nil
 }
 
-func queryPet(backend string) (Pet, error) {
+func queryPet(spanCtx opentracing.SpanContext, backend string) (Pet, error) {
 
 	var pet Pet
 	req.Debug = true
@@ -114,6 +99,12 @@ func queryPet(backend string) (Pet, error) {
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Expires", "10ms")
+
+	//Inject the opentracing header
+	if LoadConfiguration().Observability.Enable {
+		fmt.Printf("* Inject the opentracing header \n")
+		opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+	}
 
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -253,7 +244,7 @@ func detail(w http.ResponseWriter, r *http.Request) {
 			}
 
 			fmt.Printf("* Accessing %s\t %s\n", backend.Name, URL)
-			pet, err := queryPet(URL)
+			pet, err := queryPet(span.Context(), URL)
 			fmt.Printf("* result pet from queryPet %+v\n", pet)
 			if err != nil {
 				fmt.Printf("* ERROR * Accessing backend [%s][%s]:[%s]\n", backend.Name, URL, err)

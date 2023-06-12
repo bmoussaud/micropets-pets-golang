@@ -115,8 +115,9 @@ undeliverable:
 	kubectl delete Deliverable $(BINARY_NAME) -n $(MICROPETS_NS)
 
 load:
-	vegeta attack -targets=targets.txt -name=300qps -rate=300 -duration=15s > results.300qps.bin
-	cat results.300qps.bin | vegeta plot > plot.300qps.html
+	echo "GET https://pets-golang.micropets-dev.tap5.eu.aks.mytanzu.xyz" | vegeta attack -insecure -name=pets -rate=2 -duration=5s  | vegeta report
+
+#vegeta attack -targets=targets.txt -name=300qps -rate=300 -duration=15s > results.300qps.bin && cat results.300qps.bin | vegeta plot > plot.300qps.html
 
 k8s-deploy:
 	kubectl delete -k k8s
