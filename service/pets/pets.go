@@ -4,20 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	"net/http"
-	"os"
-	"regexp"
+	"os"	
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/imroc/req"
-	"github.com/opentracing/opentracing-go"
 
 	. "moussaud.org/pets/internal"
 )
+
+import "github.com/gin-gonic/gin"
 
 var calls = 0
 
@@ -48,13 +47,15 @@ type Pets struct {
 	Pets      []Pet `json:"Pets"`
 }
 
-func setupResponse(w *http.ResponseWriter, req *http.Request) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+func setupResponse(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+
 }
 
-func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
+func queryPets(backend string) (Pets, error) {
 
 	var pets Pets
 	req.Debug = true
@@ -69,7 +70,7 @@ func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
 	//Inject the opentracing header
 	if LoadConfiguration().Observability.Enable {
 		fmt.Printf("* Inject the opentracing header \n")
-		opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+		//opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	}
 
 	response, err := http.DefaultClient.Do(req)
@@ -88,7 +89,7 @@ func queryPets(spanCtx opentracing.SpanContext, backend string) (Pets, error) {
 	return pets, nil
 }
 
-func queryPet(spanCtx opentracing.SpanContext, backend string) (Pet, error) {
+func queryPet(backend string) (Pet, error) {
 
 	var pet Pet
 	req.Debug = true
@@ -103,7 +104,7 @@ func queryPet(spanCtx opentracing.SpanContext, backend string) (Pet, error) {
 	//Inject the opentracing header
 	if LoadConfiguration().Observability.Enable {
 		fmt.Printf("* Inject the opentracing header \n")
-		opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+		//opentracing.GlobalTracer().Inject(spanCtx, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	}
 
 	response, err := http.DefaultClient.Do(req)
@@ -124,30 +125,17 @@ func queryPet(spanCtx opentracing.SpanContext, backend string) (Pet, error) {
 	return pet, nil
 }
 
-func readiness_and_liveness(w http.ResponseWriter, r *http.Request) {
-	span := NewServerSpan(r, "readiness_and_liveness")
-	defer span.Finish()
-
-	setupResponse(&w, r)
-	//fmt.Printf("Handling %+v\n", r)
-	var all Pets
-	path := Path{"pets", "readiness_and_liveness"}
-	all.Hostnames = []Path{path}
-	js, err := json.Marshal(all)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+func readiness_and_liveness(c *gin.Context) {
+	c.String(http.StatusOK, "OK\n")
 }
 
-func pets(w http.ResponseWriter, r *http.Request) {
-	span := NewServerSpan(r, "pets")
-	defer span.Finish()
+func pets(c *gin.Context) {
+	//span := NewServerSpan(r, "pets")
+	//defer span.Finish()
 
-	setupResponse(&w, r)
-	fmt.Printf("index Handling %+v\n", r)
+	setupResponse(c)
+	time.Sleep(time.Duration(10) * time.Millisecond)
+
 	config := LoadConfiguration()
 
 	var all Pets
@@ -170,7 +158,7 @@ func pets(w http.ResponseWriter, r *http.Request) {
 
 		//lookupService(backend.Host)
 
-		pets, err := queryPets(span.Context(), URL)
+		pets, err := queryPets(URL)
 		if err != nil {
 			fmt.Printf("* ERROR * Accessing backend [%s][%s]:[%s]\n", backend.Name, URL, err)
 		} else {
@@ -199,41 +187,28 @@ func pets(w http.ResponseWriter, r *http.Request) {
 
 	if all.Total == 0 {
 		fmt.Printf("Zero answer from all the services (1)\n")
-		//otrext.Error.Set(span, true)
-		//span.LogFields(
-		//		otrlog.String("error.kind", "global failure"),
-		//	otrlog.String("message", "pet service unavailable"),
-		//)
-		//http.Error(w, "Zero answer from all the services (1) ", http.StatusInternalServerError)
-		WriteError(w, "no answer from all the pets services", http.StatusServiceUnavailable)
+		c.JSON(http.StatusInternalServerError, "no answer from all the pets services")
 		return
 	} else {
-		js, err := json.Marshal(all)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
+		c.IndentedJSON(http.StatusOK, all)
 	}
 }
 
-func detail(w http.ResponseWriter, r *http.Request) {
-	span := NewServerSpan(r, "detail")
-	defer span.Finish()
+func detail(c *gin.Context) {
+	//span := NewServerSpan(r, "detail")
+	//defer span.Finish()
 
-	setupResponse(&w, r)
-	fmt.Printf("index Handling %+v\n", r)
+	setupResponse(c)
+	time.Sleep(time.Duration(10) * time.Millisecond)
+
+	service := c.Param("kind")
+	id := c.Param("id")
+
 	config := LoadConfiguration()
 
-	re := regexp.MustCompile(`/`)
-	// /pets/dogs/v1/data/1
-	submatchall := re.Split(r.URL.Path, -1)
-	service := submatchall[2]
-	id := submatchall[5]
 	// TODO use the context provided by the request /pets/dogs/v1/data/1 => /dogs/v1/data/1
 
-	fmt.Printf("Display a specific pet with ID %s ... => %s %s \n", r.URL.Path, service, id)
+	fmt.Printf("Display a specific pet with ID ... => %s %s \n", service, id)
 	for _, backend := range config.Backends {
 		if service == backend.Name {
 			var URL string
@@ -244,34 +219,19 @@ func detail(w http.ResponseWriter, r *http.Request) {
 			}
 
 			fmt.Printf("* Accessing %s\t %s\n", backend.Name, URL)
-			pet, err := queryPet(span.Context(), URL)
+			pet, err := queryPet(URL)
 			fmt.Printf("* result pet from queryPet %+v\n", pet)
 			if err != nil {
 				fmt.Printf("* ERROR * Accessing backend [%s][%s]:[%s]\n", backend.Name, URL, err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				c.JSON(http.StatusInternalServerError, err.Error())
 				return
 			} else {
 				fmt.Printf("* process result\n")
-
 				pet.Type = backend.Name
-				js, err := json.Marshal(pet)
-				if err != nil {
-					fmt.Printf("* ERROR * Marshalling JSON Pet")
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				w.Header().Set("Content-Type", "application/json")
-				w.Write(js)
+				c.IndentedJSON(http.StatusOK, pet)
 			}
 		}
 	}
-}
-
-func logRequest(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-		handler.ServeHTTP(w, r)
-	})
 }
 
 func Start() {
@@ -279,20 +239,26 @@ func Start() {
 	config := LoadConfiguration()
 
 	if config.Service.Listen {
+		r := gin.Default()
+
 		port := config.Service.Port
-		http.HandleFunc("/readiness", readiness_and_liveness)
-		http.HandleFunc("/liveness", readiness_and_liveness)
-		http.HandleFunc("/public", readiness_and_liveness)
-		http.HandleFunc("/pets", pets)
-		http.HandleFunc("/pets/", detail)
-		http.HandleFunc("/", pets)
+		r.GET("/pets/liveness", readiness_and_liveness)
+		r.GET("/pets/readiness", readiness_and_liveness)
+
+		r.GET("/liveness", readiness_and_liveness)
+		r.GET("/readiness", readiness_and_liveness)
+
+		r.GET("/pets", pets)
+		r.GET("/pets/:kind/v1/data/:id", detail)
+		r.GET("/", pets)
+
 		fmt.Printf("******* Starting to the Pets service on port %s\n", port)
 		for i, backend := range config.Backends {
 			fmt.Printf("* Managing %d\t %s\t %s:%s%s\n", i, backend.Name, backend.Host, backend.Port, backend.Context)
 		}
 		fmt.Printf("> \n")
-		//log.Fatal(http.ListenAndServe(config.Service.Port, logRequest(http.DefaultServeMux)))
-		log.Fatal(http.ListenAndServe(config.Service.Port, nil))
+
+		r.Run(config.Service.Port)
 	} else {
 		fmt.Printf("******* Don't Execute Pets service and exit \n")
 	}
