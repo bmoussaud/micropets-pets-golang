@@ -18,14 +18,12 @@ spec:
   serviceClaims:
     - name: app-config
       ref:
-        apiVersion: v1
-        kind: Secret
+        apiVersion: services.apps.tanzu.vmware.com/v1alpha1
+        kind: ResourceClaim
         name: pets-config
   params:
     - name: testing_pipeline_matching_labels
       value:
         apps.tanzu.vmware.com/pipeline: test-golang
     - name: gitops_commit_message
-      value: pets dev supplychain@cluster.local
-    - name: userId
-      value: 1001
+      value: pets dev supplychain@cluster.local    

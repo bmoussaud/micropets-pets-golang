@@ -1,22 +1,24 @@
 package pets
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
 	"net/http"
-	"os"	
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/imroc/req"
 
+	"github.com/carlmjohnson/requests"
+	"github.com/gin-gonic/gin"
+
 	. "moussaud.org/pets/internal"
 )
-
-import "github.com/gin-gonic/gin"
 
 var calls = 0
 
@@ -194,6 +196,48 @@ func pets(c *gin.Context) {
 	}
 }
 
+func getConfig(c *gin.Context) {
+	//span := NewServerSpan(r, "info")
+	//defer span.Finish()
+
+	setupResponse(c)
+	time.Sleep(time.Duration(10) * time.Millisecond)
+
+	service := c.Param("kind")
+
+	config := LoadConfiguration()
+
+	fmt.Printf("Display a configuration for service ... => %s \n", service)
+	for _, backend := range config.Backends {
+		if service == backend.Name {
+			var URL string
+			if strings.HasPrefix(backend.Host, "http") {
+				URL = fmt.Sprintf("%s:%s%s", backend.Host, backend.Port, backend.Context)
+			} else {
+				URL = fmt.Sprintf("http://%s:%s%s", backend.Host, backend.Port, backend.Context)
+			}
+			URL = strings.Replace(URL, "data", "config", -1)
+
+			fmt.Printf("* Accessing Info %s\t %s\n", backend.Name, URL)
+
+			var pet any
+			err := requests.
+				URL(URL).
+				ToJSON(&pet).
+				Fetch(context.Background())
+			fmt.Printf("* result pet from queryPet %+v\n", pet)
+			if err != nil {
+				fmt.Printf("* ERROR * Accessing backend [%s][%s]:[%s]\n", backend.Name, URL, err)
+				c.JSON(http.StatusInternalServerError, err.Error())
+				return
+			} else {
+				fmt.Printf("* process result\n")
+				c.IndentedJSON(http.StatusOK, pet)
+			}
+		}
+	}
+}
+
 func detail(c *gin.Context) {
 	//span := NewServerSpan(r, "detail")
 	//defer span.Finish()
@@ -205,8 +249,6 @@ func detail(c *gin.Context) {
 	id := c.Param("id")
 
 	config := LoadConfiguration()
-
-	// TODO use the context provided by the request /pets/dogs/v1/data/1 => /dogs/v1/data/1
 
 	fmt.Printf("Display a specific pet with ID ... => %s %s \n", service, id)
 	for _, backend := range config.Backends {
@@ -250,6 +292,7 @@ func Start() {
 
 		r.GET("/pets", pets)
 		r.GET("/pets/:kind/v1/data/:id", detail)
+		r.GET("/pets/:kind/config", getConfig)
 		r.GET("/", pets)
 
 		fmt.Printf("******* Starting to the Pets service on port %s\n", port)

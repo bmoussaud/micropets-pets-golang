@@ -17,9 +17,8 @@ metadata:
 spec:
   interval: 1s
   configurationSource: pets-config
-  configMapStrategy: applicationProperties
-  content:
-    - application/default
+  plainTextContent:
+    - pets_config.json
 ---
 apiVersion: services.apps.tanzu.vmware.com/v1alpha1
 kind: ResourceClaim
