@@ -196,6 +196,56 @@ func pets(c *gin.Context) {
 	}
 }
 
+func globalConfig(c *gin.Context) {
+	setupResponse(c)
+	time.Sleep(time.Duration(10) * time.Millisecond)
+
+	config := LoadConfiguration()
+
+	var globalConfig []any
+
+	host, err := os.Hostname()
+
+	if err != nil {
+		host = "Unknown"
+	}
+
+	petconfig := map[string]string{
+		"datasource.url":    "Memory",
+		"kind":              "pets",
+		"datasource.driver": "Memory",
+		"hostname":          host,
+	}
+	globalConfig = append(globalConfig, petconfig)
+	
+	for i, backend := range config.Backends {
+		var URL string
+		if strings.HasPrefix(backend.Host, "http") {
+			URL = fmt.Sprintf("%s:%s%s", backend.Host, backend.Port, backend.Context)
+		} else {
+			URL = fmt.Sprintf("http://%s:%s%s", backend.Host, backend.Port, backend.Context)
+		}
+		URL = strings.Replace(URL, "data", "config", -1)
+		fmt.Printf("* Accessing %d %s %s .....\n", i, backend.Name, URL)
+		var config any
+		err := requests.
+			URL(URL).
+			ToJSON(&config).
+			Fetch(context.Background())
+		fmt.Printf("* result pet from config %+v\n", config)
+
+		if err != nil {
+			fmt.Printf("* ERROR * Accessing backend [%s][%s]:[%s]\n", backend.Name, URL, err)
+		} else {
+			fmt.Printf("* process result\n")
+			globalConfig = append(globalConfig, config)
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, globalConfig)
+
+}
+
 func getConfig(c *gin.Context) {
 	//span := NewServerSpan(r, "info")
 	//defer span.Finish()
@@ -293,6 +343,7 @@ func Start() {
 		r.GET("/pets", pets)
 		r.GET("/pets/:kind/v1/data/:id", detail)
 		r.GET("/pets/:kind/config", getConfig)
+		r.GET("/pets/config", globalConfig)
 		r.GET("/", pets)
 
 		fmt.Printf("******* Starting to the Pets service on port %s\n", port)
