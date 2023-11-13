@@ -197,6 +197,7 @@ func pets(c *gin.Context) {
 }
 
 func globalConfig(c *gin.Context) {
+	fmt.Printf("====> globalConfig\n")
 	setupResponse(c)
 	time.Sleep(time.Duration(10) * time.Millisecond)
 
@@ -210,14 +211,17 @@ func globalConfig(c *gin.Context) {
 		host = "Unknown"
 	}
 
-	petconfig := map[string]string{
-		"datasource.url":    "Memory",
-		"kind":              "pets",
-		"datasource.driver": "Memory",
-		"hostname":          host,
+	if 1 == 2 {
+
+		petconfig := map[string]string{
+			"url":      "Memory",
+			"kind":     "pets",
+			"driver":   "Memory",
+			"hostname": host,
+		}
+		globalConfig = append(globalConfig, petconfig)
 	}
-	globalConfig = append(globalConfig, petconfig)
-	
+
 	for i, backend := range config.Backends {
 		var URL string
 		if strings.HasPrefix(backend.Host, "http") {
